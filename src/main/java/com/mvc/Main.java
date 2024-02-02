@@ -2,27 +2,30 @@ package com.mvc;
 
 import com.seedfinding.mccore.rand.ChunkRand;
 
-import java.util.Random;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
         System.out.println("Generating a seed...");
         ChunkRand chunkRand = new ChunkRand();
-        Random rand = new Random();
 
-        long structureSeed = rand.nextLong() % (1L << 48);
-        while (true) {
-            if (filterStructureSeed(structureSeed, chunkRand)) {
-                for (long biomeSeed = 0; biomeSeed < 1L << 16; biomeSeed++) {
-                    long worldSeed = biomeSeed << 48 | structureSeed;
+        try {
+            Scanner scanner = new Scanner(new File("./12eyeseeds.txt"));
+
+            while (scanner.hasNextLong()) {
+                long worldSeed = scanner.nextLong();
+                if (filterStructureSeed(worldSeed % (1L << 48), chunkRand)) {
                     if (filterBiomeSeed(worldSeed)) {
                         System.out.println(worldSeed + " is a matching seed.");
                         return;
                     }
                 }
             }
-            structureSeed = rand.nextLong() % (1L << 48);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
