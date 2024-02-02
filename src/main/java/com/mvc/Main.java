@@ -18,10 +18,8 @@ public class Main {
             while (scanner.hasNextLong()) {
                 long worldSeed = scanner.nextLong();
                 if (filterStructureSeed(worldSeed % (1L << 48), chunkRand)) {
-                    if (filterBiomeSeed(worldSeed)) {
-                        System.out.println(worldSeed + " is a matching seed.");
-                        return;
-                    }
+                    System.out.println(worldSeed + " is a matching seed.");
+                    return;
                 }
             }
         } catch (FileNotFoundException e) {
@@ -30,10 +28,7 @@ public class Main {
     }
 
     public static boolean filterStructureSeed(long structureSeed, ChunkRand chunkRand) {
-        return new StructureFilter(structureSeed, chunkRand).filterSeed();
-    }
-
-    public static boolean filterBiomeSeed(long worldSeed) {
-        return new BiomeFilter(worldSeed).filterSeed();
+        StructureFilter filter = new StructureFilter(structureSeed, chunkRand);
+        return filter.filterEnd() && filter.filterEndBiomes();
     }
 }
