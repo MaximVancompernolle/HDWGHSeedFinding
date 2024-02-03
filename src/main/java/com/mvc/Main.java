@@ -29,6 +29,6 @@ public class Main {
 
     public static boolean filterStructureSeed(long structureSeed, ChunkRand chunkRand) {
         StructureFilter filter = new StructureFilter(structureSeed, chunkRand);
-        return filter.filterEnd() && filter.filterEndBiomes() && filter.filterEndLoot();
+        return filter.filterEnd();
     }
 }

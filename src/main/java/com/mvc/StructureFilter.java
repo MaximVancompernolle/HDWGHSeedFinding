@@ -15,10 +15,7 @@ import com.seedfinding.mcfeature.structure.EndCity;
 import com.seedfinding.mcfeature.structure.generator.structure.EndCityGenerator;
 import com.seedfinding.mcterrain.terrain.EndTerrainGenerator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class StructureFilter {
     public static final MCVersion VERSION = MCVersion.v1_16_1;
@@ -27,11 +24,9 @@ public class StructureFilter {
     public EndCityGenerator ecGen = new EndCityGenerator(VERSION);
     private final long structureSeed;
     private final ChunkRand chunkRand;
-    public static CPos ecLocation;
+    public static HashMap<Double, CPos> ecLocations;
     public EndBiomeSource source;
     public EndTerrainGenerator terrainGen;
-
-
 
     public StructureFilter(long structureSeed, ChunkRand chunkRand) {
         this.structureSeed = structureSeed;
@@ -52,13 +47,34 @@ public class StructureFilter {
 
     public boolean filterEnd() {
         BPos gateway = firstGateway(structureSeed);
-        RPos region = gateway.toRegionPos(20 << 4);
-        ecLocation = ec.getInRegion(structureSeed, region.getX(), region.getZ(), chunkRand);
+        RPos gatewayRegionPos = gateway.toRegionPos(20 << 4);
+        RPos[][] regions = new RPos[3][3];
 
-        return ecLocation.toBlockPos().distanceTo(gateway, DistanceMetric.EUCLIDEAN_SQ) < MAX_DIST;
+        for (int x = 0; x <= 2; x++) {
+            for (int z = 0; z <= 2; z++) {
+                regions[x][z] = gatewayRegionPos.add(x, z);
+            }
+        }
+
+        for (RPos[] rowOfRegions : regions) {
+            for (RPos region : rowOfRegions) {
+                CPos ecLocation = ec.getInRegion(structureSeed, region.getX(), region.getZ(), chunkRand);
+                double ecDistance = ecLocation.toBlockPos().distanceTo(gateway, DistanceMetric.EUCLIDEAN_SQ);
+                if ((ecDistance < MAX_DIST) && filterEndBiomes(ecLocation)) {
+                    ecLocations.put(ecDistance, ecLocation);
+                }
+            }
+        }
+
+        for (CPos cityEntry : ecLocations.values()) {
+            if (filterEndLoot(cityEntry)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public boolean filterEndBiomes() {
+    public boolean filterEndBiomes(CPos ecLocation) {
         if (!ec.canSpawn(ecLocation.getX(), ecLocation.getZ(), source)) return false;
         if (!ec.canGenerate(ecLocation.getX(), ecLocation.getZ(), terrainGen)) return false;
 
@@ -67,9 +83,10 @@ public class StructureFilter {
         return ecGen.hasShip();
     }
 
-    public boolean filterEndLoot() {
+    public boolean filterEndLoot(CPos ecLocation) {
         boolean foundGoodSword = false;
 
+        ecGen.generate(terrainGen, ecLocation, chunkRand);
         List<ChestContent> loot = ec.getLoot(structureSeed, ecGen, chunkRand, false);
 
         lootLoop:
@@ -85,9 +102,6 @@ public class StructureFilter {
     }
 
     public boolean hasGoodSword(ItemStack stack) {
-        boolean hasSmite = false;
-        boolean hasLooting = false;
-
         Item item = stack.getItem();
         int swordType = switch (item.getName()) {
             case "iron_sword" -> 2;
@@ -99,6 +113,9 @@ public class StructureFilter {
             return false;
         }
 
+        boolean hasSmite = false;
+        boolean hasLooting = false;
+
         for (Pair<String, Integer> enchantment : item.getEnchantments()) {
             String enchantmentName = enchantment.getFirst();
             Integer enchantmentLevel = enchantment.getSecond();
@@ -108,7 +125,6 @@ public class StructureFilter {
                 hasLooting = enchantmentLevel == 3;
             }
         }
-
         return hasSmite && hasLooting;
     }
 }
