@@ -3,7 +3,8 @@ package com.mvc;
 import com.seedfinding.mccore.rand.ChunkRand;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -14,15 +15,16 @@ public class Main {
 
         try {
             Scanner scanner = new Scanner(new File("./12eyeseeds.txt"));
+            FileWriter output = new FileWriter("./city-sword.txt");
 
             while (scanner.hasNextLong()) {
                 long worldSeed = scanner.nextLong();
                 if (filterStructureSeed(worldSeed % (1L << 48), chunkRand)) {
-                    System.out.println(worldSeed + " is a matching seed.");
-                    return;
+                    output.write(worldSeed + "\n");
                 }
             }
-        } catch (FileNotFoundException e) {
+            output.close();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
