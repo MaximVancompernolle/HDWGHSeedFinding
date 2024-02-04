@@ -20,11 +20,10 @@ import java.util.*;
 public class StructureFilter {
     public static final MCVersion VERSION = MCVersion.v1_16_1;
     public static final double MAX_DIST = 128.0D * 128.0D;
-    public static EndCity ec = new EndCity(VERSION);
+    public EndCity ec = new EndCity(VERSION);
     public EndCityGenerator ecGen = new EndCityGenerator(VERSION);
     private final long structureSeed;
     private final ChunkRand chunkRand;
-    public static HashMap<Double, CPos> ecLocations;
     public EndBiomeSource source;
     public EndTerrainGenerator terrainGen;
 
@@ -50,27 +49,32 @@ public class StructureFilter {
         RPos gatewayRegionPos = gateway.toRegionPos(20 << 4);
         RPos[][] regions = new RPos[3][3];
 
-        for (int x = 0; x <= 2; x++) {
-            for (int z = 0; z <= 2; z++) {
-                regions[x][z] = gatewayRegionPos.add(x, z);
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                regions[x + 1][z + 1] = gatewayRegionPos.add(x, z);
             }
         }
+
+        HashSet<CPos> ecLocations = new HashSet<>();
 
         for (RPos[] rowOfRegions : regions) {
             for (RPos region : rowOfRegions) {
                 CPos ecLocation = ec.getInRegion(structureSeed, region.getX(), region.getZ(), chunkRand);
                 double ecDistance = ecLocation.toBlockPos().distanceTo(gateway, DistanceMetric.EUCLIDEAN_SQ);
                 if ((ecDistance < MAX_DIST) && filterEndBiomes(ecLocation)) {
-                    ecLocations.put(ecDistance, ecLocation);
+                    ecLocations.add(ecLocation);
                 }
             }
         }
 
-        for (CPos cityEntry : ecLocations.values()) {
+        if (ecLocations.isEmpty()) return false;
+
+        for (CPos cityEntry : ecLocations) {
             if (filterEndLoot(cityEntry)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -85,7 +89,6 @@ public class StructureFilter {
 
     public boolean filterEndLoot(CPos ecLocation) {
         boolean foundGoodSword = false;
-
         ecGen.generate(terrainGen, ecLocation, chunkRand);
         List<ChestContent> loot = ec.getLoot(structureSeed, ecGen, chunkRand, false);
 
@@ -98,6 +101,7 @@ public class StructureFilter {
                 foundGoodSword = hasGoodSword(stack);
             }
         }
+
         return foundGoodSword;
     }
 
@@ -119,12 +123,14 @@ public class StructureFilter {
         for (Pair<String, Integer> enchantment : item.getEnchantments()) {
             String enchantmentName = enchantment.getFirst();
             Integer enchantmentLevel = enchantment.getSecond();
+
             if (enchantmentName.equals("smite") && !hasSmite) {
                 hasSmite = enchantmentLevel - swordType >= 3;
             } else if (enchantmentName.equals("looting") && !hasLooting) {
                 hasLooting = enchantmentLevel == 3;
             }
         }
+
         return hasSmite && hasLooting;
     }
 }
