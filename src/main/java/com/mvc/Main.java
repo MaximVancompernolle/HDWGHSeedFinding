@@ -5,24 +5,30 @@ import com.mvc.filters.NetherFilter;
 import com.mvc.filters.OverworldFilter;
 import com.seedfinding.mccore.rand.ChunkRand;
 
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
-        SynchronousOutput output = new SynchronousOutput("./output.txt");
-        ExecutorService executor = Executors.newFixedThreadPool(Config.THREADS);
+    public static void main(String[] args) throws IOException, InterruptedException {
+        System.out.println("starting seed finding");
+        FileWriter output = new FileWriter("./output.txt");
+        ExecutorService customThreadPool = new ThreadPoolExecutor(Config.THREADS, Config.THREADS, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000), new ThreadPoolExecutor.CallerRunsPolicy());
         int seedMatches = 0;
 
         while (seedMatches < Config.SEED_MATCHES) {
-            executor.submit(new ThreadOperation(output));
+            customThreadPool.submit(new ThreadOperation(output));
             seedMatches = ThreadOperation.getSeedMatches();
         }
-        executor.shutdown();
+        customThreadPool.shutdown();
+
+        if (!customThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+            System.out.println("thread pool termination timed out");
+        }
         output.close();
         System.out.printf("%,d seeds checked with %,d matches", ThreadOperation.getSeedsChecked(), seedMatches);
     }
@@ -39,11 +45,11 @@ public class Main {
 class ThreadOperation implements Runnable {
     private static final Random random = new Random();
     private final ChunkRand chunkRand = new ChunkRand();
-    private static SynchronousOutput output = null;
+    private static FileWriter output = null;
     private static int seedMatches = 0;
     private static int seedsChecked = 0;
 
-    public ThreadOperation(SynchronousOutput output) {
+    public ThreadOperation(FileWriter output) {
         if (ThreadOperation.output == null) { //only pass output object on first initialization of class
             ThreadOperation.output = output;
         }
@@ -54,7 +60,11 @@ class ThreadOperation implements Runnable {
         long structureSeed = random.nextLong() % (1L << 48);
 
         if (Main.filterStructureSeed(structureSeed, chunkRand)) {
-            output.write(structureSeed + "\n");
+            try {
+                output.write(structureSeed + "\n");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             seedMatches++;
         }
         seedsChecked++;
@@ -66,25 +76,5 @@ class ThreadOperation implements Runnable {
 
     public static int getSeedsChecked() {
         return seedsChecked;
-    }
-}
-
-class SynchronousOutput {
-    private final BufferedWriter writer;
-
-    public SynchronousOutput(String path) throws IOException {
-        writer = new BufferedWriter(new FileWriter(path));
-    }
-
-    public synchronized void write(String output) {
-        try {
-            writer.write(output);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void close() throws IOException {
-        writer.close();
     }
 }
