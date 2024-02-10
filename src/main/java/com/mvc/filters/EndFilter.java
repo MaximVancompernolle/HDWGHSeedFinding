@@ -28,7 +28,7 @@ public class EndFilter {
     public EndBiomeSource endBiomeSource;
     public EndTerrainGenerator endTerrainGen;
 
-    public EndFilter (long structureSeed, ChunkRand chunkRand) {
+    public EndFilter(long structureSeed, ChunkRand chunkRand) {
         this.structureSeed = structureSeed;
         this.chunkRand = chunkRand;
         this.endBiomeSource = new EndBiomeSource(Config.VERSION, structureSeed);
@@ -38,20 +38,20 @@ public class EndFilter {
     public boolean filterEnd() {
         CPos gateway = firstGateway(structureSeed);
         RPos gatewayRegionPos = gateway.toBlockPos().toRegionPos(20 << 4); //toRegionPos is only accurate with BPos
-        RPos[][] regions = new RPos[3][3];
+        RPos[][] ecRegions = new RPos[3][3];
 
         for (int x = -1; x <= 1; x++) {
             for (int z = -1; z <= 1; z++) {
-                regions[x + 1][z + 1] = gatewayRegionPos.add(x, z);
+                ecRegions[x + 1][z + 1] = gatewayRegionPos.add(x, z);
             }
         }
         HashSet<CPos> ecLocations = new HashSet<>();
 
-        for (RPos[] rowOfRegions : regions) {
-            for (RPos region : rowOfRegions) {
-                CPos ecLocation = ec.getInRegion(structureSeed, region.getX(), region.getZ(), chunkRand);
-                double ecDistance = ecLocation.distanceTo(gateway, DistanceMetric.EUCLIDEAN_SQ);
-                if ((ecDistance < Config.EC_MAX_DIST) && citySpawnsWithShip(ecLocation)) {
+        for (RPos[] rowOfEcRegions : ecRegions) {
+            for (RPos ecRegion : rowOfEcRegions) {
+                CPos ecLocation = ec.getInRegion(structureSeed, ecRegion.getX(), ecRegion.getZ(), chunkRand);
+
+                if ((ecLocation.distanceTo(gateway, DistanceMetric.EUCLIDEAN_SQ) < Config.EC_MAX_DIST) && citySpawnsWithShip(ecLocation)) {
                     ecLocations.add(ecLocation);
                 }
             }
@@ -61,8 +61,8 @@ public class EndFilter {
             return false;
         }
 
-        for (CPos cityEntry : ecLocations) {
-            if (filterEndLoot(cityEntry)) {
+        for (CPos ecLocation : ecLocations) {
+            if (filterEndLoot(ecLocation)) {
                 return true;
             }
         }
@@ -76,8 +76,8 @@ public class EndFilter {
         }
         Collections.shuffle(gateways, new Random(structureSeed));
         double angle = 2.0 * ((-1 * Math.PI) + (Math.PI / 20) * (gateways.removeLast()));
-        int gateway_x = (int)(1024.0 * Math.cos(angle));
-        int gateway_z = (int)(1024.0 * Math.sin(angle));
+        int gateway_x = (int) (1024.0 * Math.cos(angle));
+        int gateway_z = (int) (1024.0 * Math.sin(angle));
 
         return new CPos(gateway_x >> 4, gateway_z >> 4);
     }

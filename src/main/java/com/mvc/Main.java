@@ -21,10 +21,10 @@ public class Main {
         while (seedMatches < Config.SEED_MATCHES) {
             executor.submit(new ThreadOperation(output));
             seedMatches = ThreadOperation.getSeedMatches();
-            System.out.printf("%,d seeds checked with %,d matches\r", ThreadOperation.getSeedsChecked(), seedMatches);
         }
         executor.shutdown();
         output.close();
+        System.out.printf("%,d seeds checked with %,d matches", ThreadOperation.getSeedsChecked(), seedMatches);
     }
 
     public static boolean filterStructureSeed(long structureSeed, ChunkRand chunkRand) {
@@ -43,7 +43,7 @@ class ThreadOperation implements Runnable {
     private static int seedMatches = 0;
     private static int seedsChecked = 0;
 
-    public ThreadOperation (SynchronousOutput output) {
+    public ThreadOperation(SynchronousOutput output) {
         if (ThreadOperation.output == null) { //only pass output object on first initialization of class
             ThreadOperation.output = output;
         }

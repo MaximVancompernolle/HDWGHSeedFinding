@@ -4,7 +4,7 @@ import com.seedfinding.mccore.version.MCVersion;
 
 public class Config {
     public static final int THREADS = 16;
-    public static final int SEED_MATCHES = 1_000;
+    public static final int SEED_MATCHES = 1;
     public static final MCVersion VERSION = MCVersion.v1_16_1;
     public static final double DP_MAX_DIST = 12D * 12D;
     public static final double RP_MAX_DIST = 12D * 12D;

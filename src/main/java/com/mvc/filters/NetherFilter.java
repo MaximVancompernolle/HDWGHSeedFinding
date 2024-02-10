@@ -20,7 +20,7 @@ public class NetherFilter {
     public NetherBiomeSource netherBiomeSource;
     public NetherTerrainGenerator netherTerrainGenerator;
 
-    public NetherFilter (long structureSeed, ChunkRand chunkRand) {
+    public NetherFilter(long structureSeed, ChunkRand chunkRand) {
         this.structureSeed = structureSeed;
         this.chunkRand = chunkRand;
         this.netherBiomeSource = new NetherBiomeSource(Config.VERSION, structureSeed);
@@ -46,9 +46,8 @@ public class NetherFilter {
                 if (bastionLocation == null) {
                     continue;
                 }
-                double bastionDistance = bastionLocation.getMagnitudeSq();
 
-                if (bastionDistance < Config.BASTION_MAX_DIST && filterNetherBiomes(bastionLocation)) {
+                if ((bastionLocation.getMagnitudeSq() < Config.BASTION_MAX_DIST) && bastion.canSpawn(bastionLocation, netherBiomeSource)) {
                     bastionLocations.add(bastionLocation);
                 }
             }
@@ -66,19 +65,13 @@ public class NetherFilter {
                     continue;
                 }
 
-                for (CPos bastionEntry : bastionLocations) {
-                    double fortressDistance = fortressLocation.distanceTo(bastionEntry, DistanceMetric.EUCLIDEAN_SQ);
-
-                    if (fortressDistance < Config.FORTRESS_MAX_DIST) {
+                for (CPos bastionLocation : bastionLocations) {
+                    if (fortressLocation.distanceTo(bastionLocation, DistanceMetric.EUCLIDEAN_SQ) < Config.FORTRESS_MAX_DIST) {
                         return true;
                     }
                 }
             }
         }
         return false;
-    }
-
-    public boolean filterNetherBiomes(CPos bastionLocation) {
-        return bastion.canSpawn(bastionLocation, netherBiomeSource) && bastion.canGenerate(bastionLocation, netherTerrainGenerator);
     }
 }
