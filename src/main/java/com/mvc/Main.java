@@ -17,12 +17,20 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         System.out.println("starting seed finding");
         FileWriter output = new FileWriter("./output.txt");
-        ExecutorService customThreadPool = new ThreadPoolExecutor(Config.THREADS, Config.THREADS, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1000), new ThreadPoolExecutor.CallerRunsPolicy());
+        ExecutorService customThreadPool = new ThreadPoolExecutor(Config.THREADS, Config.THREADS, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(Config.THREADS * 10), new ThreadPoolExecutor.CallerRunsPolicy());
+        int seedsChecked = 0;
         int seedMatches = 0;
 
         while (seedMatches < Config.SEED_MATCHES) {
-            customThreadPool.submit(new ThreadOperation(output));
-            seedMatches = ThreadOperation.getSeedMatches();
+            ThreadOperation thread = new ThreadOperation();
+            customThreadPool.submit(thread);
+            Long matchedStructureSeed = thread.getMatchedStructureSeed();
+
+            if (matchedStructureSeed != null) {
+                output.write(matchedStructureSeed + "\n");
+                seedMatches++;
+            }
+            seedsChecked++;
         }
         customThreadPool.shutdown();
 
@@ -30,7 +38,7 @@ public class Main {
             System.out.println("thread pool termination timed out");
         }
         output.close();
-        System.out.printf("%,d seeds checked with %,d matches", ThreadOperation.getSeedsChecked(), seedMatches);
+        System.out.printf("%,d seeds checked with %,d matches", seedsChecked, seedMatches);
     }
 
     public static boolean filterStructureSeed(long structureSeed, ChunkRand chunkRand) {
@@ -44,37 +52,16 @@ public class Main {
 
 class ThreadOperation implements Runnable {
     private static final Random random = new Random();
-    private final ChunkRand chunkRand = new ChunkRand();
-    private static FileWriter output = null;
-    private static int seedMatches = 0;
-    private static int seedsChecked = 0;
-
-    public ThreadOperation(FileWriter output) {
-        if (ThreadOperation.output == null) { //only pass output object on first initialization of class
-            ThreadOperation.output = output;
-        }
-    }
+    private static final ChunkRand chunkRand = new ChunkRand();
+    private Long matchedStructureSeed;
 
     @Override
     public void run() {
         long structureSeed = random.nextLong() % (1L << 48);
-
-        if (Main.filterStructureSeed(structureSeed, chunkRand)) {
-            try {
-                output.write(structureSeed + "\n");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            seedMatches++;
-        }
-        seedsChecked++;
+        matchedStructureSeed = Main.filterStructureSeed(structureSeed, chunkRand) ? structureSeed : null;
     }
 
-    public static int getSeedMatches() {
-        return seedMatches;
-    }
-
-    public static int getSeedsChecked() {
-        return seedsChecked;
+    public Long getMatchedStructureSeed() {
+        return matchedStructureSeed;
     }
 }
