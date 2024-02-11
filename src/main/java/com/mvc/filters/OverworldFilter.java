@@ -4,15 +4,23 @@ import com.mvc.Config;
 import com.seedfinding.mcbiome.source.OverworldBiomeSource;
 import com.seedfinding.mccore.rand.ChunkRand;
 import com.seedfinding.mccore.state.Dimension;
+import com.seedfinding.mccore.util.data.Pair;
 import com.seedfinding.mccore.util.math.DistanceMetric;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mccore.util.pos.RPos;
+import com.seedfinding.mcfeature.loot.ChestContent;
+import com.seedfinding.mcfeature.loot.item.Item;
+import com.seedfinding.mcfeature.loot.item.ItemStack;
+import com.seedfinding.mcfeature.loot.item.Items;
 import com.seedfinding.mcfeature.structure.DesertPyramid;
 import com.seedfinding.mcfeature.structure.RuinedPortal;
 import com.seedfinding.mcfeature.structure.Village;
+import com.seedfinding.mcfeature.structure.generator.structure.DesertPyramidGenerator;
+import com.seedfinding.mcfeature.structure.generator.structure.RuinedPortalGenerator;
 import com.seedfinding.mcterrain.terrain.OverworldTerrainGenerator;
 
 import java.util.HashSet;
+import java.util.List;
 
 public class OverworldFilter {
     private final long structureSeed;
@@ -48,7 +56,7 @@ public class OverworldFilter {
             for (RPos dpRegion : rowOfDpRegions) {
                 CPos dpLocation = dp.getInRegion(structureSeed, dpRegion.getX(), dpRegion.getZ(), chunkRand);
 
-                if (dpLocation == null) {
+                if (dpLocation == null || !hasDpLoot(dpLocation)) {
                     continue;
                 }
 
@@ -87,12 +95,77 @@ public class OverworldFilter {
             for (RPos rpRegion : rowOfRpRegions) {
                 CPos rpLocation = rp.getInRegion(structureSeed, rpRegion.getX(), rpRegion.getZ(), chunkRand);
 
-                if (rpLocation == null) {
+                if (rpLocation == null || !hasRpLoot(rpLocation)) {
                     continue;
                 }
 
                 for (CPos villageLocation : villageLocations) {
                     if (rpLocation.distanceTo(villageLocation, DistanceMetric.EUCLIDEAN_SQ) < Config.RP_MAX_DIST) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean hasDpLoot(CPos dpLocation) {
+        DesertPyramidGenerator dpGen = new DesertPyramidGenerator(Config.VERSION);
+        dpGen.generate(owTerrainGen, dpLocation, chunkRand);
+        List<ChestContent> loot = dp.getLoot(structureSeed, dpGen, chunkRand, false);
+
+        int stringCount = 0;
+        int gunpowderCount = 0;
+
+        for (ChestContent chest : loot) {
+            if (!(chest.contains(Items.STRING) || chest.contains(Items.GUNPOWDER))) {
+                continue;
+            }
+            for (ItemStack stack : chest.getItems()) {
+                Item item = stack.getItem();
+
+                if (!(item.equals(Items.STRING) || item.equals(Items.GUNPOWDER))) {
+                    continue;
+                }
+
+                if (item.equals(Items.STRING)) {
+                    stringCount += stack.getCount();
+                } else if (item.equals(Items.GUNPOWDER)) {
+                    gunpowderCount += stack.getCount();
+                }
+
+                if (stringCount >= 39 && gunpowderCount >= 8) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean hasRpLoot(CPos rpLocation) {
+        RuinedPortalGenerator rpGen = new RuinedPortalGenerator(Config.VERSION);
+        rpGen.generate(owTerrainGen, rpLocation, chunkRand);
+        List<ChestContent> loot = rp.getLoot(structureSeed, rpGen, chunkRand, false);
+
+        // TODO: check for flint and steel/fire charge/iron and flint in ruined portal chest
+        for (ChestContent chest : loot) {
+            if (!chest.contains(Items.GOLDEN_SWORD)) {
+                continue;
+            }
+            for (ItemStack stack : chest.getItems()) {
+                Item item = stack.getItem();
+
+                if (!item.equals(Items.GOLDEN_SWORD)) {
+                    continue;
+                }
+                for (Pair<String, Integer> enchantment : item.getEnchantments()) {
+                    String enchantmentName = enchantment.getFirst();
+                    Integer enchantmentLevel = enchantment.getSecond();
+
+                    if (!enchantmentName.equals("looting")) {
+                        continue;
+                    }
+                    if (enchantmentLevel >= 2) {
                         return true;
                     }
                 }

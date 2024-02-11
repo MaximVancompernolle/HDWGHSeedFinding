@@ -62,7 +62,7 @@ public class EndFilter {
         }
 
         for (CPos ecLocation : ecLocations) {
-            if (filterEndLoot(ecLocation)) {
+            if (hasEndLoot(ecLocation)) {
                 return true;
             }
         }
@@ -83,7 +83,7 @@ public class EndFilter {
     }
 
     public boolean citySpawnsWithShip(CPos ecLocation) {
-        if (!ec.canSpawn(ecLocation, endBiomeSource) || !ec.canGenerate(ecLocation, endTerrainGen)) {
+        if (!(ec.canSpawn(ecLocation, endBiomeSource) && ec.canGenerate(ecLocation, endTerrainGen))) {
             return false;
         }
         ecGen.generate(endTerrainGen, ecLocation, chunkRand);
@@ -91,7 +91,7 @@ public class EndFilter {
         return ecGen.hasShip();
     }
 
-    public boolean filterEndLoot(CPos ecLocation) {
+    public boolean hasEndLoot(CPos ecLocation) {
         boolean foundGoodSword = false;
         ecGen.generate(endTerrainGen, ecLocation, chunkRand);
         List<ChestContent> loot = ec.getLoot(structureSeed, ecGen, chunkRand, false);
