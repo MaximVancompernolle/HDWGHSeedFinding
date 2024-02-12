@@ -15,11 +15,13 @@ import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        System.out.println("starting seed finding");
+        System.out.println("starting seed finding...");
         FileWriter output = new FileWriter("./output.txt");
         ExecutorService customThreadPool = new ThreadPoolExecutor(Config.THREADS, Config.THREADS, 0, TimeUnit.SECONDS, new ArrayBlockingQueue<>(Config.THREADS * 10), new ThreadPoolExecutor.CallerRunsPolicy());
         int seedsChecked = 0;
         int seedMatches = 0;
+        long nextTime = 0;
+        long currentTime;
 
         while (seedMatches < Config.SEED_MATCHES) {
             ThreadOperation thread = new ThreadOperation();
@@ -31,14 +33,20 @@ public class Main {
                 seedMatches++;
             }
             seedsChecked++;
+
+            currentTime = System.currentTimeMillis();
+            if (currentTime > nextTime) {
+                System.out.printf("%,d seeds checked with %,d matches\r", seedsChecked, seedMatches);
+                nextTime = currentTime + Config.LOG_DELAY;
+            }
         }
         customThreadPool.shutdown();
 
         if (!customThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-            System.out.println("thread pool termination timed out");
+            System.out.println("thread pool termination timed out.");
         }
         output.close();
-        System.out.printf("%,d seeds checked with %,d matches", seedsChecked, seedMatches);
+        System.out.printf("%,d seeds checked with %,d matches.\r", seedsChecked, seedMatches);
     }
 
     public static boolean filterStructureSeed(long structureSeed, ChunkRand chunkRand) {
@@ -46,7 +54,7 @@ public class Main {
         OverworldFilter overworldFilter = new OverworldFilter(structureSeed, chunkRand);
         EndFilter endFilter = new EndFilter(structureSeed, chunkRand);
 
-        return netherFilter.filterNether() && overworldFilter.filterOverworld() && endFilter.filterEnd();
+        return netherFilter.filterNether() && endFilter.filterEnd();
     }
 }
 
