@@ -7,7 +7,6 @@ import com.seedfinding.mccore.util.data.Pair;
 import com.seedfinding.mccore.util.math.DistanceMetric;
 import com.seedfinding.mccore.util.pos.CPos;
 import com.seedfinding.mccore.util.pos.RPos;
-import com.seedfinding.mcfeature.decorator.EndGateway;
 import com.seedfinding.mcfeature.loot.ChestContent;
 import com.seedfinding.mcfeature.loot.item.Item;
 import com.seedfinding.mcfeature.loot.item.ItemStack;

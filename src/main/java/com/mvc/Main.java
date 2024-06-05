@@ -1,7 +1,6 @@
 package com.mvc;
 
 import com.mvc.filters.EndFilter;
-import com.mvc.filters.OverworldFilter;
 import com.seedfinding.mccore.rand.ChunkRand;
 
 import java.io.File;
@@ -19,7 +18,7 @@ public class Main {
         long nextTime = 0;
         long currentTime;
 
-        while (scanner.hasNextLong() && seedMatches < Config.SEED_MATCHES) {
+        while (scanner.hasNextLong()) {
             long structureSeed = scanner.nextLong();
             int xCord = scanner.nextInt();
             int zCord = scanner.nextInt();
