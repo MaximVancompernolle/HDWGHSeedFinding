@@ -59,7 +59,7 @@ public class EndFilter {
         if (!ecGen.generate(endTerrainGen, ecLocation, chunkRand)) {
             return false;
         }
-        ecGen.generate(endTerrainGen, ecLocation, chunkRand);
+//        ecGen.generate(endTerrainGen, ecLocation, chunkRand);
 
         List<ChestContent> loot = ec.getLoot(structureSeed, ecGen, chunkRand, false);
         int ironCount = 0;
@@ -113,9 +113,9 @@ public class EndFilter {
                         hasBoots = true;
                     }
                 } else if (stack.getItem().getName().equals("diamond_pickaxe") || stack.getItem().getName().equals("iron_pickaxe")) {
-                    hasPickaxe = isGoodTool(stack);
+                    hasPickaxe |= isGoodTool(stack);
                 } else if (stack.getItem().getName().equals("diamond_shovel") || stack.getItem().getName().equals("iron_shovel")) {
-                    hasShovel = isGoodTool(stack);
+                    hasShovel |= isGoodTool(stack);
                 }
             }
         }
