@@ -12,13 +12,14 @@ public class Main {
     public static void main(String[] args) throws IOException {
         System.out.println("Starting seed finding...");
         Scanner scanner = new Scanner(new File("./ssvFastionEndCityShipSeedsWithCoords.txt"));
-        Scanner checkpointScanner = new Scanner(new File("./boincpoint"));
         FileWriter output = new FileWriter("./output.txt", true);
         int seedsChecked = 0;
         int seedsCheckpointLoaded = 0;
-        if (checkpointScanner.hasNextInt()) {
-            seedsCheckpointLoaded = checkpointScanner.nextInt();
-        }
+        try (Scanner checkpointScanner = new Scanner(new File("./boincpoint"))) {
+            if (checkpointScanner.hasNextInt()) {
+                seedsCheckpointLoaded = checkpointScanner.nextInt();
+            }
+        } catch (IOException e) {}
         int seedMatches = 0;
         long nextTime = 0;
         long currentTime;
